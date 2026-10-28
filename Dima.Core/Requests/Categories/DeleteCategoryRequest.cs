@@ -3,4 +3,5 @@
 public class DeleteCategoryRequest
 {
     public long Id { get; set; }
+    public string? UserId { get; set; }
 }
