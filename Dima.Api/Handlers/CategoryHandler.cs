@@ -1,4 +1,5 @@
-﻿using Dima.Api.Data;
+﻿using Azure.Core;
+using Dima.Api.Data;
 using Dima.Core.Handlers;
 using Dima.Core.Models;
 using Dima.Core.Requests.Categories;
@@ -30,6 +31,7 @@ public class CategoryHandler(AppDbContext context) : ICategoryHandler
             return new Response<Category?>(null, 500, e.Message);
         }
     }
+    
 
     public async Task<Response<Category?>> UpdateAsync(UpdateCategoryRequest request)
     {
@@ -47,7 +49,7 @@ public class CategoryHandler(AppDbContext context) : ICategoryHandler
 
             context.Update(category);
             await context.SaveChangesAsync();
-            return new Response<Category?>(category);
+            return new Response<Category?>(category, 200, "Category updated");
         }
         catch (Exception e)
         {
@@ -60,7 +62,7 @@ public class CategoryHandler(AppDbContext context) : ICategoryHandler
     {
         try
         {
-            var category = await context.Categories.FirstOrDefaultAsync(x => x.Id == request.Id && x.UserId == request.UserId);
+            var category = await context.Categories.FirstOrDefaultAsync(x => x.Id == request.Id);
             if (category is null)
                 return new Response<Category?>(null, 404, "Category not found");
             
@@ -79,7 +81,7 @@ public class CategoryHandler(AppDbContext context) : ICategoryHandler
     {
         try
         {
-            var categoty = await context.Categories.FirstOrDefaultAsync(x => x.Id == request.Id);
+            var categoty = await context.Categories.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (categoty is null)
                 return new Response<Category?>(null, 404, "Category not found");
 
@@ -92,16 +94,24 @@ public class CategoryHandler(AppDbContext context) : ICategoryHandler
 
     }
 
-    public async Task<Response<List<Category>>> GetAllAsync(GetAllCategoriesRequest request)
+    public async Task<PagedResponse<List<Category>>> GetAllAsync(GetAllCategoriesRequest request)
     {
         try
         {
-            var categories = await context.Categories.ToListAsync();
-            return new Response<List<Category>>(categories);
+            var query = context.Categories.AsNoTracking().OrderBy(x => x.Title);
+            
+            var categories = await query
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+            
+            var count = await query.CountAsync();
+            
+            return new PagedResponse<List<Category>>(categories, count,  request.PageNumber, request.PageSize);
         }
         catch (Exception e)
         {
-            return new Response<List<Category>>(null, 500, e.Message);
+            return new PagedResponse<List<Category>>(null, 500, e.Message);
         }
         
     }
