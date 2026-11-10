@@ -10,6 +10,29 @@ namespace Dima.Api.Handlers;
 
 public class CategoryHandler(AppDbContext context) : ICategoryHandler
 {
+    
+    public async Task<PagedResponse<List<Category>>> GetAllAsync(GetAllCategoriesRequest request)
+    {
+        try
+        {
+            var query = context.Categories.AsNoTracking().OrderBy(x => x.Title);
+            
+            var categories = await query
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+            
+            var count = await query.CountAsync();
+            
+            return new PagedResponse<List<Category>>(categories, count,  request.PageNumber, request.PageSize);
+        }
+        catch (Exception e)
+        {
+            return new PagedResponse<List<Category>>(null, 500, e.Message);
+        }
+        
+    }
+    
     public async Task<Response<Category?>> CreatedAsync(CreateCategoryRequest request)
     {
         try
@@ -94,25 +117,5 @@ public class CategoryHandler(AppDbContext context) : ICategoryHandler
 
     }
 
-    public async Task<PagedResponse<List<Category>>> GetAllAsync(GetAllCategoriesRequest request)
-    {
-        try
-        {
-            var query = context.Categories.AsNoTracking().OrderBy(x => x.Title);
-            
-            var categories = await query
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync();
-            
-            var count = await query.CountAsync();
-            
-            return new PagedResponse<List<Category>>(categories, count,  request.PageNumber, request.PageSize);
-        }
-        catch (Exception e)
-        {
-            return new PagedResponse<List<Category>>(null, 500, e.Message);
-        }
-        
-    }
+  
 }
