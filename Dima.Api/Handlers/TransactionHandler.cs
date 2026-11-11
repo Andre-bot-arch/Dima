@@ -1,4 +1,5 @@
 ﻿using Dima.Api.Data;
+using Dima.Core.Common.Extensions;
 using Dima.Core.Handlers;
 using Dima.Core.Models;
 using Dima.Core.Requests.Transactions;
@@ -107,8 +108,51 @@ public class TransactionHandler(AppDbContext context) : ITransactionHandler
         }
     }
 
-    public Task<PagedResponse<Transaction?>> GetByPeriodoAsync(GetTransactionByPeriodRequest request)
+    public async Task<PagedResponse<List<Transaction?>>> GetByPeriodoAsync(GetTransactionByPeriodRequest request)
     {
-        throw new NotImplementedException();
+        try
+        {
+            request.StartDate ??= DateTime.Now.GetFirstDay();
+            request.EndDate ??= DateTime.Now.GetLastDay();
+            
+        }
+        catch (Exception e)
+        {
+            return  new PagedResponse<List<Transaction>>(null, 500, e.Message);
+         
+        }
+
+        try
+        {
+            var query = context.Transactions
+                .AsNoTracking()
+                .Where(x => x.CreatedAt >= request.StartDate && x.CreatedAt <= request.EndDate)
+                .OrderBy(x => x.CreatedAt);
+
+            var transactions = await query
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            var count = await query.CountAsync();
+
+            return new PagedResponse<List<Transaction>?>(
+                transactions,
+                count,
+                request.PageNumber,
+                request.PageSize);
+
+        }
+        catch (Exception e)
+        {
+            return  new PagedResponse<List<Transaction>>(null, 500, e.Message);
+        }
+        
+
+
+
+
+
+
     }
 }
