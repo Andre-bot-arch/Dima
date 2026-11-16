@@ -3,4 +3,5 @@
 public class DeleteTransactionRequest
 {
     public long Id { get; set; }
+    public string UserId { get; set; }
 }

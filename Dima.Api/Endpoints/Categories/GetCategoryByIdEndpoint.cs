@@ -1,4 +1,5 @@
-﻿using Dima.Api.Common.Api;
+﻿using System.Security.Claims;
+using Dima.Api.Common.Api;
 using Dima.Core.Handlers;
 using Dima.Core.Models;
 using Dima.Core.Requests.Categories;
@@ -19,12 +20,13 @@ public class GetCategoryByIdEndpoint : IEndpoint
     
     private static async Task<IResult> HandleAsync(
         [FromQuery]long id,
-        ICategoryHandler handler)
+        ICategoryHandler handler,
+        ClaimsPrincipal user)
     {
         var reque = new GetCategoryByIdRequest()
         {
             Id = id,
-            UserId = "lucas@123"
+            UserId = user.Identity?.Name ?? string.Empty
         };
         
         var result = await handler.GetAsync(reque);

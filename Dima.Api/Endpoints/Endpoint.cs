@@ -8,10 +8,18 @@ public static class Endpoint
 {
     public static void MapEndpoints(this WebApplication app)
     {
-        var endpoint = app.MapGroup("");
+        var endpoint = app
+            .MapGroup("");
+
+        
+        endpoint.MapGroup("/")
+            .WithTags("Health check")
+            .MapGet("/", () => new { message = "ok" });
+        
+        
         endpoint.MapGroup("v1/categories")
             .WithTags("Categories")
-            //.RequireAuthorization()
+            .RequireAuthorization()
             .MapEndpoint<CreatedCategoryEndpoint>()
             .MapEndpoint<GetAllCategoriesEndpoint>()
             .MapEndpoint<UpdateCategoryEndpoint>()
@@ -20,7 +28,7 @@ public static class Endpoint
         
         endpoint.MapGroup("v1/transactions")
             .WithTags("Transactions")
-            //.RequireAuthorization()
+            .RequireAuthorization()
             .MapEndpoint<CreateTransactionEndpoint>()
             .MapEndpoint<DeleteTransactionEndpoint>()
             .MapEndpoint<GetTransactionByIdEnpoint>()
